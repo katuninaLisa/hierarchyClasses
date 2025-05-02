@@ -2,6 +2,12 @@
 
 Property::Property() {}
 
+Property::Property(const QString &name, const QVector<int> &val)
+{
+    propertyName = name;
+    values = val;
+}
+
 QString Property::getPropertyName() const
 {
     return propertyName;
@@ -29,9 +35,9 @@ void Property::setpropertyName(QString propert)
     propertyName = propert;
 }
 
-void Property::setvalues(QVector<int> val)
+void Property::setvalues(int val)
 {
-    values = val;
+    values.append(val);
 }
 
 uint qHash(const Property &key, uint seed) {
