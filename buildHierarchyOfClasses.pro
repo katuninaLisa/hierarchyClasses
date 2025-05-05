@@ -9,7 +9,10 @@ CONFIG += c++17 cmdline
 SOURCES += \
         class.cpp \
         main.cpp \
-        property.cpp
+        property.cpp \
+        testsbuildhierarchy.cpp
+
+QT += core testlib
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -18,4 +21,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     class.h \
-    property.h
+    property.h \
+    testsbuildhierarchy.h
