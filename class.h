@@ -16,6 +16,7 @@ public:
     void setproperties(QSet <Property> prop);
 
     bool operator==(const Class&other) const;
+    bool operator=(Class&other);
     bool isSubClass(const Class&other) const;
 
 private:

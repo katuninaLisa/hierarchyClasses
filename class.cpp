@@ -28,6 +28,12 @@ bool Class::operator==(const Class& other) const
     return (className == other.className && properties == other.properties);
 }
 
+bool Class::operator=(Class& other)
+{
+    className = other.className;
+    properties = other.properties;
+}
+
 void Class::setclassName(QString name)
 {
     className = name;
