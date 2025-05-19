@@ -7,6 +7,8 @@ class Class
 {
 public:
     Class();
+    Class (const QString&);
+    Class (const QString&, Property& prop);
 
     QString getName() const;
     QSet<Property> getProperties() const;

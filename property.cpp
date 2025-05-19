@@ -8,6 +8,12 @@ Property::Property(const QString &name, const QVector<int> &val)
     values = val;
 }
 
+Property::Property(const QString &name, int val)
+{
+    propertyName = name;
+    values.append(val);
+}
+
 QString Property::getPropertyName() const
 {
     return propertyName;

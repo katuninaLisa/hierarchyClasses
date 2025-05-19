@@ -15,8 +15,8 @@ public:
     bool operator==(const Property& other) const;
     bool valuePropertyExist() const;
 
-    QSet <Property> createProperties(QMap <QString, QVector<int>> &prop);
     Property (const QString &name, const QVector <int> &val);
+    Property (const QString &name, int val);
 
 private:
     QString propertyName;

@@ -2,6 +2,17 @@
 
 Class::Class() {}
 
+Class::Class(const QString &n)
+{
+    className = n;
+}
+
+Class::Class (const QString&name, Property& prop)
+{
+    className = name;
+    properties.insert(prop);
+}
+
 QString Class::getName() const
 {
     return className;
