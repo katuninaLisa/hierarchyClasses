@@ -1,4 +1,4 @@
-QT = core
+QT = core testlib
 
 CONFIG += c++17 cmdline
 
@@ -10,6 +10,7 @@ SOURCES += \
         class.cpp \
         main.cpp \
         property.cpp \
+        tests_parsexmlcontent.cpp \
         testsbuildhierarchy.cpp
 
 QT += core testlib
@@ -21,5 +22,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     class.h \
+    errors.h \
     property.h \
+    tests_parsexmlcontent.h \
     testsbuildhierarchy.h
