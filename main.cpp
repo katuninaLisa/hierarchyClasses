@@ -3,116 +3,8 @@
 #include "property.h"
 #include <QtTest>
 #include "testsbuildhierarchy.h"
-
-enum error_type
-{
-    invalid_input_file_path,
-    invalid_output_file_path,
-    xml_syntax_error,
-    invalid_name_tag,
-    missed_tag,
-    invalid_name_attribute,
-    missed_attribute,
-    invalid_characters_attribute,
-    invalid_type_value,
-    invalid_range_value,
-    invalid_length_name_class,
-    invalid_length_name_property,
-    invalid_count_properties_in_class,
-    invalid_count_of_classes,
-    incorrect_order_tags,
-    duplication_class,
-    duplication_property,
-    duplication_content_of_class,
-    empty_file
-};
-
-struct Errors
-{
-    QString nameTag;
-    QString attribute;
-    QString value;
-    QString className;
-    QString otherClassName;
-    QString propertyName;
-    error_type type;
-
-    Errors(const QString& n, const QString& a, const QString& v, const QString& c, const QString& o, const QString& p, error_type t):
-        nameTag(n), attribute(a), value(v), className(c), otherClassName(o), propertyName(p), type(t)
-    {}
-
-    QString error() const
-    {
-        QString message;
-        switch (type){
-            case invalid_input_file_path:
-                message = "Ошибка. Входной файл не найден";
-            case invalid_output_file_path:
-                message = "Ошибка. Выходной файл не найден";
-            case xml_syntax_error:
-                message = "Ошибка: Некорректный формат XML-файла. Проверьте синтаксис и структуру.";
-            case invalid_name_tag:
-                message = QString("Ошибка: Неккоректное название тега <%1>").arg(nameTag);
-            case missed_tag:
-                message = QString("Ошибка: Отсутствует тег <%1>.").arg(nameTag);
-            case invalid_name_attribute:
-                message = QString("Ошибка: Необходимо использовать атрибут 'name' в теге <%1>, а не '%2'").arg(nameTag).arg(attribute);
-            case missed_attribute:
-                message = QString("Ошибка: В теге <%1> пропущен аттрибут").arg(nameTag);
-            case invalid_characters_attribute:{
-                QString text;
-                if (!propertyName.isEmpty())
-                    text = QString("%1 класс %2").arg(propertyName).arg(className);
-                else
-                    text = QString("класс %1").arg(className);
-                message = QString("Ошибка: %1 содержит недопустимые символы. Используйте только русские буквы, и нижние подчеркивания.").arg(text);
-            }
-            case invalid_type_value:
-                message = QString("Ошибка: Недопустимый тип значения класса <%1> свойства <%2>. Ожидается целое число.").arg(className).arg(propertyName);
-            case invalid_range_value:
-                message = QString("Ошибка: Значение свойства <%1> класса <%2> вне допустимого диапазона: от 1 до 1000. Значение свойства: %3.").arg(propertyName).arg(className).arg(value);
-            case invalid_length_name_class:
-                message = QString("Ошибка: Превышена максимальная длина класса <%1>. Максимальная длина: 30.").arg(className);
-            case invalid_length_name_property:
-                message = QString("Ошибка: Превышена максимальная длина свойства <%1>. Максимальная длина: 30.").arg(propertyName);
-            case invalid_count_properties_in_class:
-                message = QString("Ошибка: Количество свойств в классе <%1> должно быть от 1 до 30.").arg(className);
-            case invalid_count_of_classes:
-                message = QString("Ошибка: Количество классов должно быть от 1 до 50. Фактическое кол-во классов: %1").arg(value);
-            case incorrect_order_tags:{
-                QString text;
-                if (nameTag == "class")
-                    text = "classes";
-                else if (nameTag == "property")
-                    text = "class";
-                else if (nameTag == "value")
-                    text = "property";s
-                message = QString("Ошибка: Неправильный порядок тегов: тег %1 должен быть вложен в %2.").arg(nameTag).arg(text);
-            }
-            case duplication_class:
-                message = QString("Ошибка: Невозможно построить иерархию классов. Обнаружено дублирование классов %1.").arg(className);
-            case duplication_property:
-                message = QString("Ошибка: Невозможно построить иерархию классов. Обнаружено дублирование свойств %1 класса %2.").arg(propertyName).arg(className);
-            case duplication_content_of_class:
-                message = QString("Ошибка: Невозможно построить иерархию классов. Обнаружено дублирование содержимого классов %1 и %2.").arg(className).arg(otherClassName);
-            case empty_file:
-                message = "Ошибка: Пустой файл.";
-        }
-        return message;
-    }
-
-    bool operator==(const Errors &other) const {
-        return type == other.type && nameTag == other.nameTag && attribute == other.attribute &&
-            value == other.value && className == other.className && propertyName == other.propertyName &&
-            otherClassName == other.otherClassName;
-    }
-};
-
-inline uint qHash(const Errors &error, uint seed = 0) {
-    return qHash(error.type, seed) ^ qHash(error.nameTag, seed) ^ qHash(error.attribute, seed) ^
-           qHash(error.value, seed) ^ qHash(error.className, seed) ^ qHash(error.propertyName, seed) ^
-           qHash(error.otherClassName, seed);
-}
+#include "tests_parsexmlcontent.h"
+#include "errors.h"
 
 void createMatrix(QMap <QString, QMap<QString,int>> &matrix, const QSet <Class> &classes)
 {
@@ -179,15 +71,27 @@ void buildHierarchy(const QSet<Class> &classes, QMap <QString, QMap<QString,int>
 
 void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QSet<Errors >& list_of_errors, QSet <Class> &classes)
 {
+    bool isEmpty = false;
+    if (fileContent.isEmpty() || fileContent.trimmed().isEmpty()) // если файл пустой или в файле только пробелы
+    {
+        Errors error("","","","","","",empty_file);
+        list_of_errors.insert(error);
+        isEmpty = true;
+    }
+
     QXmlStreamReader xml(fileContent);
 
-    int countClasses = 0;
-    bool hasRoot = false;
+    int countClasses = 0; // количество классов
+    bool hasRoot = false; // наличие корневого тега
     QRegularExpression regexName("^[а-яё_]+$"); // регулярное выражение - из каких букв может состоять название
     QRegularExpression regexValue("^[0-9]+$"); // регулярное выражение для значения свойства
-    int error_in_list = 0;
+    int error_in_list = 0; // кол-во ошибок до получения тега
+    int countTagClasses = 0; //количество тегов classes
+    QString previousTag; // предыдущий тег
+    QSet <Class> tempClasses; // временный список классов
+
     // Пока не конец файла
-    while (!xml.atEnd() && !xml.hasError())
+    while (!xml.atEnd() && !xml.hasError() && !isEmpty)
     {
         //Читаем следующий элемент
         QXmlStreamReader::TokenType token = xml.readNext();
@@ -197,7 +101,10 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
             QString tagName = xml.name().toString(); //получаем название тега
 
             if (tagName == "classes")
+            {
                 hasRoot = true;
+                countTagClasses++;
+            }
             if (!hasRoot) //если отсутствует корневой элемент classes
             {
                 Errors error("classes","","","","","",missed_tag);
@@ -236,7 +143,7 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
                 }
 
                 bool foun = false;
-                for (const Class &clas : classes) // если есть дублирующие названия классов
+                for (const Class &clas : tempClasses) // если есть дублирующие названия классов
                 {
                     if (clas.getName() == className)
                     {
@@ -265,19 +172,19 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
 
                         if (propertyName.isEmpty()) // если недопустипое имя атрибута
                         {
-                            Errors error(tagName,xml.attributes().at(0).name().toString(),"","","","",invalid_name_attribute);
+                            Errors error(xml.name().toString(),xml.attributes().at(0).name().toString(),"","","","",invalid_name_attribute);
                             list_of_errors.insert(error);
                         }
 
                         if (propertyName.length() > 30) // если длина имени свойства больше 30
                         {
-                            Errors error(tagName,"","",className,"",propertyName,invalid_length_name_property);
+                            Errors error(xml.name().toString(),"","",className,"",propertyName,invalid_length_name_property);
                             list_of_errors.insert(error);
                         }
 
-                        if (!regexName.match(propertyName).hasMatch()) // если в имени свойства присутствуют недопустимые символы
+                        if (!regexName.match(propertyName).hasMatch() && !propertyName.isEmpty()) // если в имени свойства присутствуют недопустимые символы
                         {
-                            Errors error(tagName,"","",className,"",propertyName,invalid_characters_attribute);
+                            Errors error(xml.name().toString(),"","",className,"",propertyName,invalid_characters_attribute);
                             list_of_errors.insert(error);
                         }
 
@@ -289,7 +196,7 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
                         }
                         if (exist)
                         {
-                            Errors error(tagName,"","",className,"",propertyName,duplication_property);
+                            Errors error(xml.name().toString(),"","",className,"",propertyName,duplication_property);
                             list_of_errors.insert(error);
                         }
 
@@ -305,19 +212,34 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
 
                                 for (const QString val: values)
                                 {
-                                    if (val.toInt() < 1 || val.toInt() > 1000) // если значение свойства вне допустимого диапазона
-                                    {
-                                        Errors error("","",val,className,"",propertyName,invalid_range_value);
-                                        list_of_errors.insert(error);
-                                    }
-
                                     if (!regexValue.match(val).hasMatch()) // если значение свойства имеет недопустимый тип
                                     {
-                                        Errors error("","",val,className,"",propertyName,invalid_type_value);
+                                        Errors error("value","",val,className,"",propertyName,invalid_type_value);
                                         list_of_errors.insert(error);
                                     }
                                     else
-                                        properties.setvalues(val.toInt());
+                                    {
+                                        if (val.toInt() < 1 || val.toInt() > 1000) // если значение свойства вне допустимого диапазона
+                                        {
+                                            Errors error("value","",val,className,"",propertyName,invalid_range_value);
+                                            list_of_errors.insert(error);
+                                        }
+                                        else
+                                            properties.setvalues(val.toInt()); // значение - верное
+                                    }
+                                }
+                            }
+                            else if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() != "value")
+                            {
+                                if (!allowedTags.contains(xml.name().toString())) // если название тега - неккоректно
+                                {
+                                    Errors error(xml.name().toString(),"","","","","",invalid_name_tag);
+                                    list_of_errors.insert(error);
+                                }
+                                else
+                                {
+                                    Errors error(xml.name().toString(), "","","","","",incorrect_order_tags);
+                                    list_of_errors.insert(error);
                                 }
                             }
                         }
@@ -327,39 +249,65 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
                             Errors error("","","",className,"","",invalid_count_properties_in_class);
                             list_of_errors.insert(error);
                         }
+
+                        prop.insert(properties); // добавляем новое свойство
+                    }
+                    else if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() != "property")
+                    {
+                        if (!allowedTags.contains(xml.name().toString())) // если название тега - неккоректно
+                        {
+                            Errors error(xml.name().toString(),"","","","","",invalid_name_tag);
+                            list_of_errors.insert(error);
+                        }
                         else
-                            prop.insert(properties); // добавляем новое свойство
+                        {
+                            Errors error(xml.name().toString(), "","","","","",incorrect_order_tags);
+                            list_of_errors.insert(error);
+                        }
                     }
                 }
 
                 if (list_of_errors.count() == error_in_list) // если ошибок нет
                 {
                     bool foundProp = false; QString otherClass;
-                    for (const Class &allClass : classes)
+                    for (const Class &allClass : tempClasses) // проверка на содержимое классов
                     {
-                        if (allClass.getProperties() == curClass.getProperties() && foundProp == false)
+                        if (allClass.getProperties() == prop && foundProp == false && !allClass.getProperties().isEmpty() && !prop.isEmpty())
                         {
                             foundProp = true;
                             otherClass = allClass.getName();
                         }
                     }
-                    if (foundProp) // если найдены классы с полностью идентичными свойства
+                    if (foundProp) // если найдены классы с полностью идентичными свойствами
                     {
-                        Errors error("","","",className,otherClass,"",duplication_content_of_class);
+                        Errors error(tagName,"","",otherClass,className,"",duplication_content_of_class);
                         list_of_errors.insert(error);
                     }
-                    else if (!prop.isEmpty()) //если есть свойства в классе
+                    else //иначе добавляем класс
                     {
                         curClass.setproperties(prop);
-                        classes.insert(curClass);
+                        tempClasses.insert(curClass);
                     }
                 }
                 else
                     error_in_list = list_of_errors.count();
             }
+            else
+            {
+                if (tagName == "property" && previousTag != "class")
+                {
+                    Errors error(tagName, "","","","","",incorrect_order_tags);
+                    list_of_errors.insert(error);
+                }
+                if (tagName == "value" && previousTag != "property")
+                {
+                    Errors error(tagName, "","","","","",incorrect_order_tags);
+                    list_of_errors.insert(error);
+                }
+            }
+            previousTag = tagName;
         }
     }
-
     if (countClasses > 50) //если количество классов больше 50
     {
         Errors error("","",QString::number(countClasses),"","","",invalid_count_of_classes);
@@ -371,7 +319,10 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
         Errors error("","","","","","",xml_syntax_error);
         list_of_errors.insert(error);
     }
-
+    else
+    {
+        classes = tempClasses;
+    }
 }
 
 int inputXMLfile(const QString& filePath, QStringList& allowedTags, QSet<Errors >& list_of_errors, QSet <Class> &classes)
@@ -403,12 +354,8 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    //testsBuildHierarchy tests;
-    //QTest::qExec(&tests, argc, argv);
-
-    QStringList allowedTags = {"classes", "class", "property", "value"};
-    QSet <Errors> list_of_errors;
-    QSet <Class> classes;
+    tests_parseXMLcontent tests;
+    QTest::qExec(&tests, argc, argv);
 
     return 0;
 }
