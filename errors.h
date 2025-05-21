@@ -56,7 +56,7 @@ struct Errors
         case invalid_name_attribute:
             message = QString("Ошибка: Необходимо использовать атрибут 'name' в теге <%1>, а не '%2'").arg(nameTag).arg(attribute);
         case missed_attribute:
-            message = QString("Ошибка: В теге <%1> пропущен аттрибут").arg(nameTag);
+            message = QString("Ошибка: В теге %1 пропущен аттрибут").arg(nameTag);
         case invalid_characters_attribute:{
             QString text;
             if (!propertyName.isEmpty())
@@ -80,12 +80,14 @@ struct Errors
         case incorrect_order_tags:{
             QString text;
             if (nameTag == "class")
-                text = "classes";
+                text = "вложен в classes";
             else if (nameTag == "property")
-                text = "class";
+                text = "вложен в class";
             else if (nameTag == "value")
-                text = "property";
-                message = QString("Ошибка: Неправильный порядок тегов: тег %1 должен быть вложен в %2.").arg(nameTag).arg(text);
+                text = "вложен в property";
+            else if (nameTag == "classes")
+                text = "корневым";
+            message = QString("Ошибка: Неправильный порядок тегов: тег %1 должен быть %2.").arg(nameTag).arg(text);
         }
         case duplication_class:
             message = QString("Ошибка: Невозможно построить иерархию классов. Обнаружено дублирование классов %1.").arg(className);

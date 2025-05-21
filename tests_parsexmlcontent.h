@@ -33,6 +33,7 @@ private slots:
     void tooLongLengthNameProperty(); //Превышена максимальная длина имени свойства
     void PropertyValueOutOfRange(); //Значение свойства вне допустимого диапазона
     void invalidNameTag(); //Недопустимое имя тега
+    void missedAttributeInTag(); // В теге пропущен атрибут
 };
 
 

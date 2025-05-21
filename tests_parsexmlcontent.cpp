@@ -408,3 +408,20 @@ void tests_parseXMLcontent::tooManyPropertiesInClass()
     QVERIFY(classes.isEmpty());
     QVERIFY(exp_list_of_errors == list_of_errors);
 }
+
+void tests_parseXMLcontent::missedAttributeInTag()
+{
+    const QByteArray fileContent = "<classes><class name=\"машина\"><property></property></class></classes>";
+    QStringList allowedTags = {"classes", "class", "property", "value"};
+    QSet <Errors> list_of_errors;
+    QSet <Class> classes;
+
+    ParseXMLcontent(fileContent, allowedTags, list_of_errors, classes);
+
+    QSet <Errors> exp_list_of_errors;
+    Errors error("property","","","","","",missed_attribute);
+    exp_list_of_errors.insert(error);
+
+    QVERIFY(classes.isEmpty());
+    QVERIFY(exp_list_of_errors == list_of_errors);
+}
