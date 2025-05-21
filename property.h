@@ -17,6 +17,7 @@ public:
 
     Property (const QString &name, const QVector <int> &val);
     Property (const QString &name, int val);
+    Property (const QString &name);
 
 private:
     QString propertyName;

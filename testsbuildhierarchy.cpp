@@ -27,8 +27,7 @@ void testsBuildHierarchy::emptyClasses()
 void testsBuildHierarchy::singleClass()
 {
     QSet <Class> classes;
-    Class human;
-    human.setclassName("человек");
+    Class human("человек");
     classes.insert(human);
 
     QMap <QString, QMap <QString, int>> matrix;
@@ -43,13 +42,11 @@ void testsBuildHierarchy::singleClass()
 void testsBuildHierarchy::twoIndependentClasses()
 {
     QSet <Class> classes;
-    Class human;
-    human.setclassName("человек");
-    human.setproperties(createProperties({{"фио", {}}}));
+    Property humanprop("фио");
+    Class human("человек",humanprop);
     classes.insert(human);
-    Class animal;
-    animal.setclassName("животное");
-    animal.setproperties(createProperties({{"вид", {}}}));
+    Property animalprop("вид");
+    Class animal("животное",animalprop);
     classes.insert(animal);
 
     QMap <QString, QMap <QString, int>> matrix;
@@ -65,13 +62,13 @@ void testsBuildHierarchy::twoIndependentClasses()
 void testsBuildHierarchy::simpleInheritance()
 {
     QSet <Class> classes;
-    Class human;
-    human.setclassName("человек");
-    human.setproperties(createProperties({{"фио", {}}}));
+    Property humanprop("фио");
+    Class human("человек",humanprop);
     classes.insert(human);
-    Class student;
-    student.setclassName("студент");
-    student.setproperties(createProperties({{"фио", {}}, {"курс", {}}}));
+
+    Class student("студент");
+    QMap <QString, QVector<int>> prop = {{"фио", {}}, {"курс", {}}};
+    student.setproperties(createProperties(prop));
     classes.insert(student);
 
     QMap <QString, QMap <QString, int>> matrix;
@@ -87,17 +84,18 @@ void testsBuildHierarchy::simpleInheritance()
 void testsBuildHierarchy::chainInheritance()
 {
     QSet <Class> classes;
-    Class human;
-    human.setclassName("человек");
-    human.setproperties(createProperties({{"фио", {}}}));
+    Property humanprop("фио");
+    Class human("человек",humanprop);
     classes.insert(human);
-    Class student;
-    student.setclassName("студент");
-    student.setproperties(createProperties({{"фио", {}}, {"курс", {}}}));
+
+    Class student("студент");
+    QMap <QString, QVector<int>> prop = {{"фио", {}}, {"курс", {}}};
+    student.setproperties(createProperties(prop));
     classes.insert(student);
-    Class nadezkin;
-    nadezkin.setclassName("надежкин");
-    nadezkin.setproperties({{"фио", {}}, {"курс", {2}}});
+
+    Class nadezkin("надежкин");
+    QMap <QString, QVector<int>> prop2 = {{"фио", {}}, {"курс", {2}}};
+    nadezkin.setproperties(createProperties(prop2));
     classes.insert(nadezkin);
 
     QMap <QString, QMap <QString, int>> matrix;
@@ -114,17 +112,19 @@ void testsBuildHierarchy::chainInheritance()
 void testsBuildHierarchy::multipleInheritance()
 {
     QSet <Class> classes;
-    Class military;
-    military.setclassName("военный");
-    military.setproperties(createProperties({{"фио", {}},{"звание", {}}}));
+    Class military("военный");
+    QMap <QString, QVector<int>> prop2 = {{"фио", {}}, {"звание", {}}};
+    military.setproperties(createProperties(prop2));
     classes.insert(military);
-    Class student;
-    student.setclassName("студент");
-    student.setproperties(createProperties({{"фио", {}}, {"курс", {}}}));
+
+    Class student("студент");
+    QMap <QString, QVector<int>> prop = {{"фио", {}}, {"курс", {}}};
+    student.setproperties(createProperties(prop));
     classes.insert(student);
-    Class student_military;
-    student_military.setclassName("студент_военного_училища");
-    student_military.setproperties({{"фио", {}}, {"курс", {}}, {"звание", {}}});
+
+    Class student_military("студент_военного_училища");
+    QMap <QString, QVector<int>> prop3 = {{"фио", {}}, {"курс", {}}, {"звание", {}}};
+    student_military.setproperties(createProperties(prop3));
     classes.insert(student_military);
 
     QMap <QString, QMap <QString, int>> matrix;
@@ -141,21 +141,23 @@ void testsBuildHierarchy::multipleInheritance()
 void testsBuildHierarchy::multiLevelInheritance()
 {
     QSet <Class> classes;
-    Class human;
-    human.setclassName("человек");
-    human.setproperties(createProperties({{"фио", {}}}));
+    Property humanprop("фио");
+    Class human("человек",humanprop);
     classes.insert(human);
-    Class student;
-    student.setclassName("студент");
-    student.setproperties(createProperties({{"фио", {}}, {"курс", {}}}));
+
+    Class student("студент");
+    QMap <QString, QVector<int>> prop = {{"фио", {}}, {"курс", {}}};
+    student.setproperties(createProperties(prop));
     classes.insert(student);
-    Class military;
-    military.setclassName("военный");
-    military.setproperties(createProperties({{"фио", {}},{"звание", {}}}));
+
+    Class military("военный");
+    QMap <QString, QVector<int>> prop2 = {{"фио", {}}, {"звание", {}}};
+    military.setproperties(createProperties(prop2));
     classes.insert(military);
-    Class student_military;
-    student_military.setclassName("студент_военного_училища");
-    student_military.setproperties({{"фио", {}}, {"курс", {}}, {"звание", {}}});
+
+    Class student_military("студент_военного_училища");
+    QMap <QString, QVector<int>> prop3 = {{"фио", {}}, {"курс", {}}, {"звание", {}}};
+    student_military.setproperties(createProperties(prop3));
     classes.insert(student_military);
 
     QMap <QString, QMap <QString, int>> matrix;
@@ -173,25 +175,27 @@ void testsBuildHierarchy::multiLevelInheritance()
 void testsBuildHierarchy::multipleHierarchies()
 {
     QSet <Class> classes;
-    Class transport;
-    transport.setclassName("транспорт");
-    transport.setproperties(createProperties({{"способ_передвижения", {}}}));
+    Property transportprop("способ_передвижения");
+    Class transport("транспорт",transportprop);
     classes.insert(transport);
-    Class human;
-    human.setclassName("человек");
-    human.setproperties(createProperties({{"фио", {}}}));
+
+    Property humanprop("фио");
+    Class human("человек",humanprop);
     classes.insert(human);
-    Class student;
-    student.setclassName("студент");
-    student.setproperties(createProperties({{"фио", {}}, {"курс", {}}}));
+
+    Class student("студент");
+    QMap <QString, QVector<int>> prop = {{"фио", {}}, {"курс", {}}};
+    student.setproperties(createProperties(prop));
     classes.insert(student);
-    Class military;
-    military.setclassName("военный");
-    military.setproperties(createProperties({{"фио", {}},{"звание", {}}}));
+
+    Class military("военный");
+    QMap <QString, QVector<int>> prop2 = {{"фио", {}}, {"звание", {}}};
+    military.setproperties(createProperties(prop2));
     classes.insert(military);
-    Class trolleybus;
-    trolleybus.setclassName("троллейбус");
-    trolleybus.setproperties(createProperties({{"способ_передвижения", {}}, {"билет", {}}}));
+
+    Class trolleybus("троллейбус");
+    QMap <QString, QVector<int>> prop3 = {{"способ_передвижения", {}}, {"билет", {}}};
+    trolleybus.setproperties(createProperties(prop3));
     classes.insert(trolleybus);
 
     QMap <QString, QMap <QString, int>> matrix;

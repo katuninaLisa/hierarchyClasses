@@ -14,6 +14,11 @@ Property::Property(const QString &name, int val)
     values.append(val);
 }
 
+Property::Property (const QString &name)
+{
+    propertyName = name;
+}
+
 QString Property::getPropertyName() const
 {
     return propertyName;
