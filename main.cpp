@@ -4,6 +4,7 @@
 #include <QtTest>
 #include "testsbuildhierarchy.h"
 #include "tests_parsexmlcontent.h"
+#include "tests_classhierarchydot.h"
 #include "errors.h"
 
 void createMatrix(QMap <QString, QMap<QString,int>> &matrix, const QSet <Class> &classes)
@@ -348,6 +349,40 @@ int inputXMLfile(const QString& filePath, QStringList& allowedTags, QSet<Errors 
     file.close();
     //Вернуть успешность завершения функции
     return 0;
+}
+
+QString classHierarchyDOT(QMap <QString, QMap <QString, int>> &matrix)
+{
+    // Записать заголовок DOT-файла
+    QString result = "digraph ClassHierarchy {";
+
+    //Добавление узлов (классов)
+    QMap<QString, QMap<QString, int>>::const_iterator it1 = matrix.constBegin();
+    for (it1; it1 != matrix.constEnd(); ++it1)
+    {
+        result += QString(it1.key()) + ";";
+    }
+
+    //Добавление связей между классами
+    QMap<QString, QMap<QString, int>>::const_iterator it = matrix.constBegin();
+    for (it; it != matrix.constEnd(); ++it)
+    {
+        QMap<QString, int> row = it.value();
+        QMap<QString, int>::const_iterator it2 = row.constBegin();
+        for (it2; it2 != row.constEnd(); ++it2)
+        {
+            if (it2.value() == 1)
+            {
+                result += QString(it.key()) + "->" + QString(it2.key()) + ";";
+            }
+        }
+    }
+
+    //Завершение DOT-файла
+    result += "}";
+
+    //Вернуть запись связей между классами
+    return result;
 }
 
 int main(int argc, char *argv[])
