@@ -10,6 +10,7 @@ SOURCES += \
         class.cpp \
         main.cpp \
         property.cpp \
+        tests_classhierarchydot.cpp \
         tests_parsexmlcontent.cpp \
         testsbuildhierarchy.cpp
 
@@ -24,5 +25,6 @@ HEADERS += \
     class.h \
     errors.h \
     property.h \
+    tests_classhierarchydot.h \
     tests_parsexmlcontent.h \
     testsbuildhierarchy.h
