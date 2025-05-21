@@ -124,6 +124,12 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
 
                 Class curClass;
 
+                if (xml.attributes().count() == 0) // если пропущен атрибут
+                {
+                    Errors error(tagName,"","","","","",missed_attribute);
+                    list_of_errors.insert(error);
+                }
+
                 QString className = xml.attributes().value("name").toString(); // получаем название класса
                 if (className.isEmpty()) // если название атрибута - неккоректно
                 {
@@ -171,7 +177,13 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
                         Property properties;
                         properties.setpropertyName(propertyName);
 
-                        if (propertyName.isEmpty()) // если недопустипое имя атрибута
+                        if (xml.attributes().count() == 0) // если пропущен атрибут
+                        {
+                            Errors error(xml.name().toString(),"","","","","",missed_attribute);
+                            list_of_errors.insert(error);
+                        }
+
+                        if (propertyName.isEmpty() && xml.attributes().count() != 0) // если недопустипое имя атрибута
                         {
                             Errors error(xml.name().toString(),xml.attributes().at(0).name().toString(),"","","","",invalid_name_attribute);
                             list_of_errors.insert(error);
@@ -301,6 +313,11 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
                     list_of_errors.insert(error);
                 }
                 if (tagName == "value" && previousTag != "property")
+                {
+                    Errors error(tagName, "","","","","",incorrect_order_tags);
+                    list_of_errors.insert(error);
+                }
+                if (tagName == "classes" && countTagClasses > 1)
                 {
                     Errors error(tagName, "","","","","",incorrect_order_tags);
                     list_of_errors.insert(error);
