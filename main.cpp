@@ -1,11 +1,55 @@
 #include <QCoreApplication>
-#include "class.h"
-#include "property.h"
-#include <QtTest>
-#include "testsbuildhierarchy.h"
-#include "tests_parsexmlcontent.h"
-#include "tests_classhierarchydot.h"
-#include "errors.h"
+#include "main.h"
+
+int main(int argc, char *argv[])
+{
+    char* empty_argv[] = { argv[0] }; // Только имя программы
+    QTest::qExec(new tests_parseXMLcontent, 1, empty_argv);
+    QTest::qExec(new testsBuildHierarchy, 1, empty_argv);
+    QTest::qExec(new tests_classHierarchyDOT, 1, empty_argv);
+
+    QCoreApplication a(argc, argv);
+
+    // Считать из параметров командной строки путь к входному файлу
+    QString inputFilePath = argv[1];
+    // Считать из параметров командной строки путь для выходных файлов
+    QString outputFilePath = argv[2];
+
+    //Список разрешенных тегов
+    QStringList allowedTags = {"classes", "class", "property", "value"};
+    //Список классов
+    QSet <Class> classes;
+    //Список ошибок
+    QSet <Errors> list_of_errors;
+
+    // Считать данные из входного файла (inputXMLfile)
+    int input = inputXMLfile(inputFilePath, allowedTags, list_of_errors, classes);
+
+    int result = 0; // результат выполнения программы
+
+    // Если удалось считать данные без ошибок (list_of_errors - пустой)
+    if (list_of_errors.isEmpty())
+    {
+        QMap <QString, QMap<QString, int>> matrix; // матрица, в которой будут храниться все связи
+        // Создать иерархию классов
+        buildHierarchy(classes,matrix);
+        // Загрузить структуру иерархии в файл
+        result = OutputFile(outputFilePath, list_of_errors, matrix);
+    }
+
+    if (!list_of_errors.isEmpty() || result == -1)
+    {
+        //Вернуть все обнаруженные ошибки
+        for (const auto error : list_of_errors)
+        {
+            qInfo() << error.error();
+        }
+        return -1;
+    }
+
+    // Завершить работу программы
+    return 0;
+}
 
 void createMatrix(QMap <QString, QMap<QString,int>> &matrix, const QSet <Class> &classes)
 {
@@ -70,6 +114,207 @@ void buildHierarchy(const QSet<Class> &classes, QMap <QString, QMap<QString,int>
     eliminate_class_duplication(matrix);
 }
 
+void processValueElement(QXmlStreamReader& xml,QSet<Errors>& list_of_errors, Property& properties, QString className,QString propertyName, QStringList &allowedTags)
+{
+    QRegularExpression regexValue("^[0-9]+$"); // регулярное выражение для значения свойства
+
+    if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() == "value")
+    {
+        QString value = xml.readElementText();
+
+        QStringList values = value.split(',', Qt::SkipEmptyParts);
+
+        for (const QString val: values)
+        {
+            if (!regexValue.match(val).hasMatch()) // если значение свойства имеет недопустимый тип
+            {
+                Errors error("value","",val,className,"",propertyName,invalid_type_value);
+                list_of_errors.insert(error);
+            }
+            else
+            {
+                if (val.toInt() < 1 || val.toInt() > 1000) // если значение свойства вне допустимого диапазона
+                {
+                    Errors error("value","",val,className,"",propertyName,invalid_range_value);
+                    list_of_errors.insert(error);
+                }
+                else
+                    properties.setvalues(val.toInt()); // значение - верное
+            }
+        }
+    }
+    else if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() != "value")
+    {
+        if (!allowedTags.contains(xml.name().toString())) // если название тега - неккоректно
+        {
+            Errors error(xml.name().toString(),"","","","","",invalid_name_tag);
+            list_of_errors.insert(error);
+        }
+        else
+        {
+            Errors error(xml.name().toString(), "","","","","",incorrect_order_tags);
+            list_of_errors.insert(error);
+        }
+    }
+}
+
+void processPropertyElement(QXmlStreamReader& xml, QRegularExpression& regexName,QSet<Errors>& list_of_errors, QSet<Property>& prop, QString className, QStringList &allowedTags)
+{
+    if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() == "property")
+    {
+        QString propertyName = xml.attributes().value("name").toString();
+
+        Property properties(propertyName);
+
+        if (xml.attributes().count() == 0) // если пропущен атрибут
+        {
+            Errors error(xml.name().toString(),"","","","","",missed_attribute);
+            list_of_errors.insert(error);
+        }
+
+        if (propertyName.isEmpty() && xml.attributes().count() != 0) // если недопустипое имя атрибута
+        {
+            Errors error(xml.name().toString(),xml.attributes().at(0).name().toString(),"","","","",invalid_name_attribute);
+            list_of_errors.insert(error);
+        }
+
+        if (propertyName.length() > 30) // если длина имени свойства больше 30
+        {
+            Errors error(xml.name().toString(),"","",className,"",propertyName,invalid_length_name_property);
+            list_of_errors.insert(error);
+        }
+
+        if (!regexName.match(propertyName).hasMatch() && !propertyName.isEmpty()) // если в имени свойства присутствуют недопустимые символы
+        {
+            Errors error(xml.name().toString(),"","",className,"",propertyName,invalid_characters_attribute);
+            list_of_errors.insert(error);
+        }
+
+        bool exist = false; // если есть дублирующие название свойств в классе
+        for (const Property &p : prop)
+        {
+            if (p.getPropertyName() == propertyName)
+                exist = true;
+        }
+        if (exist)
+        {
+            Errors error(xml.name().toString(),"","",className,"",propertyName,duplication_property);
+            list_of_errors.insert(error);
+        }
+
+        while (!(xml.tokenType() == QXmlStreamReader::EndElement && xml.name().toString() == "property") && !xml.atEnd()) // Обрабатываем значения свойства
+        {
+            xml.readNext(); // переходим к след тегу
+
+            processValueElement(xml, list_of_errors, properties, className, propertyName, allowedTags);
+        }
+
+        prop.insert(properties); // добавляем новое свойство
+    }
+
+    else if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() != "property")
+    {
+        if (!allowedTags.contains(xml.name().toString())) // если название тега - неккоректно
+        {
+            Errors error(xml.name().toString(),"","","","","",invalid_name_tag);
+            list_of_errors.insert(error);
+        }
+        else
+        {
+            Errors error(xml.name().toString(), "","","","","",incorrect_order_tags);
+            list_of_errors.insert(error);
+        }
+    }
+}
+
+void processClassElement(QXmlStreamReader& xml,QStringList& allowedTags,QSet<Errors>& list_of_errors, QSet<Class>& tempClasses, int countClasses)
+{
+    QRegularExpression regexName("^[а-яё_]+$"); // регулярное выражение - из каких букв может состоять название
+    int error_in_list = 0; // кол-во ошибок до получения тега
+
+    QString className = xml.attributes().value("name").toString(); // получаем название класса
+
+    Class curClass(className);
+
+    if (xml.attributes().count() == 0) // если пропущен атрибут
+    {
+        Errors error("class","","","","","",missed_attribute);
+        list_of_errors.insert(error);
+    }
+
+    if (className.isEmpty() && xml.attributes().count() != 0) // если название атрибута - неккоректно
+    {
+        Errors error("class",xml.attributes().at(0).name().toString(),"","","","",invalid_name_attribute);
+        list_of_errors.insert(error);
+    }
+
+    if (className.length() > 30) // если длина имени класса больше 30
+    {
+        Errors error("class","","",className,"","",invalid_length_name_class);
+        list_of_errors.insert(error);
+    }
+
+    if (!regexName.match(className).hasMatch() && !className.isEmpty()) // если в названии класса есть недопустимые символы
+    {
+        Errors error("class","","",className,"","",invalid_characters_attribute);
+        list_of_errors.insert(error);
+    }
+
+    bool foun = false;
+    for (const Class &clas : tempClasses) // если есть дублирующие названия классов
+    {
+        if (clas.getName() == className)
+        {
+            foun = true;
+        }
+    }
+    if (foun)
+    {
+        Errors error("","","",className,"","",duplication_class);
+        list_of_errors.insert(error);
+    }
+
+    QSet <Property> prop;
+
+    while (!(xml.tokenType() == QXmlStreamReader::EndElement && xml.name().toString() == "class") && !xml.atEnd()) // Обрабатываем свойства класса
+    {
+        xml.readNext(); // переходим к след. тегу
+
+        processPropertyElement(xml, regexName, list_of_errors, prop, className, allowedTags);
+    }
+
+    if (prop.count() > 30) //если кол-во свойств в классе вне допустимого диапазона
+    {
+        Errors error("","","",className,"","",invalid_count_properties_in_class);
+        list_of_errors.insert(error);
+    }
+
+    if (list_of_errors.count() == error_in_list) // если ошибок нет
+    {
+        bool foundProp = false; QString otherClass;
+        for (const Class &allClass : tempClasses) // проверка на содержимое классов
+        {
+            if (allClass.getProperties() == prop && foundProp == false && !allClass.getProperties().isEmpty() && !prop.isEmpty())
+            {
+                foundProp = true;
+                otherClass = allClass.getName();
+            }
+        }
+        if (foundProp) // если найдены классы с полностью идентичными свойствами
+        {
+            Errors error("class","","",otherClass,className,"",duplication_content_of_class);
+            list_of_errors.insert(error);
+        }
+        else //иначе добавляем класс
+        {
+            curClass.setproperties(prop);
+            tempClasses.insert(curClass);
+        }
+    }
+    else
+        error_in_list = list_of_errors.count();
+}
+
 void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QSet<Errors >& list_of_errors, QSet <Class> &classes)
 {
     bool isEmpty = false;
@@ -84,9 +329,6 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
 
     int countClasses = 0; // количество классов
     bool hasRoot = false; // наличие корневого тега
-    QRegularExpression regexName("^[а-яё_]+$"); // регулярное выражение - из каких букв может состоять название
-    QRegularExpression regexValue("^[0-9]+$"); // регулярное выражение для значения свойства
-    int error_in_list = 0; // кол-во ошибок до получения тега
     int countTagClasses = 0; //количество тегов classes
     QString previousTag; // предыдущий тег
     QSet <Class> tempClasses; // временный список классов
@@ -119,191 +361,10 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
             }
 
             if (tagName == "class") //обрабатываем тег <class>
-            {
-                countClasses++;
+            {   
+                countClasses++; // увеличиваем кол-во классов
 
-                Class curClass;
-
-                if (xml.attributes().count() == 0) // если пропущен атрибут
-                {
-                    Errors error(tagName,"","","","","",missed_attribute);
-                    list_of_errors.insert(error);
-                }
-
-                QString className = xml.attributes().value("name").toString(); // получаем название класса
-                if (className.isEmpty()) // если название атрибута - неккоректно
-                {
-                    Errors error(tagName,xml.attributes().at(0).name().toString(),"","","","",invalid_name_attribute);
-                    list_of_errors.insert(error);
-                }
-
-                if (className.length() > 30) // если длина имени класса больше 30
-                {
-                    Errors error(tagName,"","",className,"","",invalid_length_name_class);
-                    list_of_errors.insert(error);
-                }
-
-                if (!regexName.match(className).hasMatch() && !className.isEmpty()) // если в названии класса есть недопустимые символы
-                {
-                    Errors error(tagName,"","",className,"","",invalid_characters_attribute);
-                    list_of_errors.insert(error);
-                }
-
-                bool foun = false;
-                for (const Class &clas : tempClasses) // если есть дублирующие названия классов
-                {
-                    if (clas.getName() == className)
-                    {
-                        foun = true;
-                    }
-                }
-                if (foun)
-                {
-                    Errors error("","","",className,"","",duplication_class);
-                    list_of_errors.insert(error);
-                }
-
-                curClass.setclassName(className);
-                QSet <Property> prop;
-
-                while (!(xml.tokenType() == QXmlStreamReader::EndElement && xml.name().toString() == "class") && !xml.atEnd()) // Обрабатываем свойства класса
-                {
-                    xml.readNext(); // переходим к след. тегу
-
-                    if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() == "property")
-                    {
-                        QString propertyName = xml.attributes().value("name").toString();
-
-                        Property properties;
-                        properties.setpropertyName(propertyName);
-
-                        if (xml.attributes().count() == 0) // если пропущен атрибут
-                        {
-                            Errors error(xml.name().toString(),"","","","","",missed_attribute);
-                            list_of_errors.insert(error);
-                        }
-
-                        if (propertyName.isEmpty() && xml.attributes().count() != 0) // если недопустипое имя атрибута
-                        {
-                            Errors error(xml.name().toString(),xml.attributes().at(0).name().toString(),"","","","",invalid_name_attribute);
-                            list_of_errors.insert(error);
-                        }
-
-                        if (propertyName.length() > 30) // если длина имени свойства больше 30
-                        {
-                            Errors error(xml.name().toString(),"","",className,"",propertyName,invalid_length_name_property);
-                            list_of_errors.insert(error);
-                        }
-
-                        if (!regexName.match(propertyName).hasMatch() && !propertyName.isEmpty()) // если в имени свойства присутствуют недопустимые символы
-                        {
-                            Errors error(xml.name().toString(),"","",className,"",propertyName,invalid_characters_attribute);
-                            list_of_errors.insert(error);
-                        }
-
-                        bool exist = false; // если есть дублирующие название свойств в классе
-                        for (const Property &p : prop)
-                        {
-                            if (p.getPropertyName() == propertyName)
-                                exist = true;
-                        }
-                        if (exist)
-                        {
-                            Errors error(xml.name().toString(),"","",className,"",propertyName,duplication_property);
-                            list_of_errors.insert(error);
-                        }
-
-                        while (!(xml.tokenType() == QXmlStreamReader::EndElement && xml.name().toString() == "property") && !xml.atEnd()) // Обрабатываем значения свойства
-                        {
-                            xml.readNext(); // переходим к след тегу
-
-                            if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() == "value")
-                            {
-                                QString value = xml.readElementText();
-
-                                QStringList values = value.split(',', Qt::SkipEmptyParts);
-
-                                for (const QString val: values)
-                                {
-                                    if (!regexValue.match(val).hasMatch()) // если значение свойства имеет недопустимый тип
-                                    {
-                                        Errors error("value","",val,className,"",propertyName,invalid_type_value);
-                                        list_of_errors.insert(error);
-                                    }
-                                    else
-                                    {
-                                        if (val.toInt() < 1 || val.toInt() > 1000) // если значение свойства вне допустимого диапазона
-                                        {
-                                            Errors error("value","",val,className,"",propertyName,invalid_range_value);
-                                            list_of_errors.insert(error);
-                                        }
-                                        else
-                                            properties.setvalues(val.toInt()); // значение - верное
-                                    }
-                                }
-                            }
-                            else if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() != "value")
-                            {
-                                if (!allowedTags.contains(xml.name().toString())) // если название тега - неккоректно
-                                {
-                                    Errors error(xml.name().toString(),"","","","","",invalid_name_tag);
-                                    list_of_errors.insert(error);
-                                }
-                                else
-                                {
-                                    Errors error(xml.name().toString(), "","","","","",incorrect_order_tags);
-                                    list_of_errors.insert(error);
-                                }
-                            }
-                        }
-
-                        if (prop.count() > 30) //если кол-во свойств в классе вне допустимого диапазона
-                        {
-                            Errors error("","","",className,"","",invalid_count_properties_in_class);
-                            list_of_errors.insert(error);
-                        }
-
-                        prop.insert(properties); // добавляем новое свойство
-                    }
-                    else if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() != "property")
-                    {
-                        if (!allowedTags.contains(xml.name().toString())) // если название тега - неккоректно
-                        {
-                            Errors error(xml.name().toString(),"","","","","",invalid_name_tag);
-                            list_of_errors.insert(error);
-                        }
-                        else
-                        {
-                            Errors error(xml.name().toString(), "","","","","",incorrect_order_tags);
-                            list_of_errors.insert(error);
-                        }
-                    }
-                }
-
-                if (list_of_errors.count() == error_in_list) // если ошибок нет
-                {
-                    bool foundProp = false; QString otherClass;
-                    for (const Class &allClass : tempClasses) // проверка на содержимое классов
-                    {
-                        if (allClass.getProperties() == prop && foundProp == false && !allClass.getProperties().isEmpty() && !prop.isEmpty())
-                        {
-                            foundProp = true;
-                            otherClass = allClass.getName();
-                        }
-                    }
-                    if (foundProp) // если найдены классы с полностью идентичными свойствами
-                    {
-                        Errors error(tagName,"","",otherClass,className,"",duplication_content_of_class);
-                        list_of_errors.insert(error);
-                    }
-                    else //иначе добавляем класс
-                    {
-                        curClass.setproperties(prop);
-                        tempClasses.insert(curClass);
-                    }
-                }
-                else
-                    error_in_list = list_of_errors.count();
+                processClassElement(xml, allowedTags, list_of_errors, tempClasses, countClasses);
             }
             else
             {
@@ -331,7 +392,6 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
         Errors error("","",QString::number(countClasses),"","","",invalid_count_of_classes);
         list_of_errors.insert(error);
     }
-
     if (xml.hasError())// Если есть ошибки парсинга
     {
         Errors error("","","","","","",xml_syntax_error);
@@ -402,12 +462,25 @@ QString classHierarchyDOT(QMap <QString, QMap <QString, int>> &matrix)
     return result;
 }
 
-int main(int argc, char *argv[])
+int OutputFile(const QString &filePath, QSet <Errors> &list_of_errors, QMap<QString, QMap<QString, int>> &matrix)
 {
-    QCoreApplication a(argc, argv);
+    // Создать указанный выходной файл
+    QFile file(filePath);
 
-    tests_parseXMLcontent tests;
-    QTest::qExec(&tests, argc, argv);
+    //Если не удалось успешно открыть выходной файл
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        //Создать новый объект ошибки
+        Errors error("","","","","","",invalid_output_file_path);
+        list_of_errors.insert(error);
+        return -1;
+    }
+    // Добавить в выходной файл информацию о связях между классами (classHierarchyDOT)
+    QString result = classHierarchyDOT(matrix);
 
+    QTextStream out(&file);
+    out << result;
+
+    //Вернуть успешность завершения функции
     return 0;
 }
