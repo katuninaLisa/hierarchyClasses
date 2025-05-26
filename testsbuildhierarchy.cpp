@@ -4,6 +4,7 @@
 testsBuildHierarchy::testsBuildHierarchy(QObject *parent) : QObject(parent)
 {}
 
+//Вспомогательный метод
 QSet<Property> testsBuildHierarchy::createProperties(const QMap <QString, QVector<int>> &prop)
 {
     QSet <Property> properties;
@@ -14,199 +15,149 @@ QSet<Property> testsBuildHierarchy::createProperties(const QMap <QString, QVecto
     return properties;
 }
 
-void testsBuildHierarchy::emptyClasses()
+void testsBuildHierarchy::testBuildHierarchy_data()
 {
-    QSet <Class> classes;
-    QMap <QString, QMap <QString, int>> matrix;
+    //Создаем колонки-параметры метода
+    QTest::addColumn<QSet<Class>>("classes");
+    QTest::addColumn<newQMapName>("expMatrix");
 
-    buildHierarchy(classes, matrix);
+    //Создаем строки-тесты
+    // Пустой список классов
+    QTest::newRow("emptyClasses") << QSet <Class> () << newQMapName ();
 
-    QVERIFY(matrix.isEmpty());
-}
+    // Один класс без наследников
+    QSet <Class> singleClass;
+    singleClass.insert(Class("человек"));
+    newQMapName singleMatrix;
+    singleMatrix["человек"] = {{"человек", 0}};
 
-void testsBuildHierarchy::singleClass()
-{
-    QSet <Class> classes;
-    Class human("человек");
-    classes.insert(human);
+    QTest::newRow("singleClass") << singleClass << singleMatrix;
 
-    QMap <QString, QMap <QString, int>> matrix;
-    QMap <QString, QMap <QString, int>> expMatrix;
-    expMatrix["человек"] = {{"человек", 0}};
+    // Два независимых класса
+    QSet <Class> twoClasses;
+    Property humanProp("фио");
+    Property animalProp("вид");
+    twoClasses.insert(Class("человек", humanProp));
+    twoClasses.insert(Class("животное", animalProp));
 
-    buildHierarchy(classes,matrix);
-
-    QCOMPARE(matrix, expMatrix);
-}
-
-void testsBuildHierarchy::twoIndependentClasses()
-{
-    QSet <Class> classes;
-    Property humanprop("фио");
-    Class human("человек",humanprop);
-    classes.insert(human);
-    Property animalprop("вид");
-    Class animal("животное",animalprop);
-    classes.insert(animal);
-
-    QMap <QString, QMap <QString, int>> matrix;
-    QMap <QString, QMap <QString, int>> expMatrix;
-    expMatrix = {{"человек", {{"человек", 0},{"животное", 0}}},
+    newQMapName twoMatrix;
+    twoMatrix = {{"человек", {{"человек", 0},{"животное", 0}}},
                  {"животное", {{"человек", 0}, {"животное", 0}}}};
 
-    buildHierarchy(classes,matrix);
+    QTest::newRow("twoIndependentClasses") << twoClasses << twoMatrix;
 
-    QCOMPARE(matrix, expMatrix);
-}
+    // Один класс наследует другой
+    QSet <Class> simpleInheritance;
+    simpleInheritance.insert(Class("человек", humanProp));
+    Class student2("студент");
+    student2.setproperties(createProperties({{"фио", {}}, {"курс", {}}}));
+    simpleInheritance.insert(student2);
 
-void testsBuildHierarchy::simpleInheritance()
-{
-    QSet <Class> classes;
-    Property humanprop("фио");
-    Class human("человек",humanprop);
-    classes.insert(human);
+    newQMapName simpleInheritanceMatrix;
+    simpleInheritanceMatrix = {{"человек", {{"человек", 0},{"студент", 0}}},
+                 {"студент", {{"человек", 1}, {"студент", 0}}}};
 
-    Class student("студент");
-    QMap <QString, QVector<int>> prop = {{"фио", {}}, {"курс", {}}};
-    student.setproperties(createProperties(prop));
-    classes.insert(student);
+    QTest::newRow("simpleInheritance") << simpleInheritance << simpleInheritanceMatrix;
 
-    QMap <QString, QMap <QString, int>> matrix;
-    QMap <QString, QMap <QString, int>> expMatrix;
-    expMatrix = {{"человек", {{"человек", 0},{"студент", 0}}},
-                {"студент", {{"человек", 1}, {"студент", 0}}}};
-
-    buildHierarchy(classes,matrix);
-
-    QCOMPARE(matrix, expMatrix);
-}
-
-void testsBuildHierarchy::chainInheritance()
-{
-    QSet <Class> classes;
-    Property humanprop("фио");
-    Class human("человек",humanprop);
-    classes.insert(human);
-
-    Class student("студент");
-    QMap <QString, QVector<int>> prop = {{"фио", {}}, {"курс", {}}};
-    student.setproperties(createProperties(prop));
-    classes.insert(student);
+    // Цепочка наследования
+    QSet <Class> chainInheritance;
+    chainInheritance.insert(Class("человек", humanProp));
+    Class student1("студент");
+    student1.setproperties(createProperties({{"фио", {}}, {"курс", {}}}));
+    chainInheritance.insert(student1);
 
     Class nadezkin("надежкин");
-    QMap <QString, QVector<int>> prop2 = {{"фио", {}}, {"курс", {2}}};
-    nadezkin.setproperties(createProperties(prop2));
-    classes.insert(nadezkin);
+    nadezkin.setproperties(createProperties({{"фио", {}}, {"курс", {2}}}));
+    chainInheritance.insert(nadezkin);
 
-    QMap <QString, QMap <QString, int>> matrix;
-    QMap <QString, QMap <QString, int>> expMatrix;
-    expMatrix = {{"человек", {{"человек", 0},{"студент", 0}, {"надежкин", 0}}},
-                {"студент", {{"человек", 1}, {"студент", 0}, {"надежкин", 0}}},
-                {"надежкин", {{"человек", 0}, {"студент", 1}, {"надежкин", 0}}}};
+    newQMapName chainInheritanceMatrix;
+    chainInheritanceMatrix = {{"человек", {{"человек", 0},{"студент", 0}, {"надежкин", 0}}},
+                 {"студент", {{"человек", 1}, {"студент", 0}, {"надежкин", 0}}},
+                 {"надежкин", {{"человек", 0}, {"студент", 1}, {"надежкин", 0}}}};
 
-    buildHierarchy(classes,matrix);
+    QTest::newRow("chainInheritance") << chainInheritance << chainInheritanceMatrix;
 
-    QCOMPARE(matrix, expMatrix);
-}
+    // Множественное наследования
+    QSet <Class> multipleInheritance;
+    Class military1("военный");
+    military1.setproperties(createProperties({{"фио", {}}, {"звание", {}}}));
+    multipleInheritance.insert(military1);
 
-void testsBuildHierarchy::multipleInheritance()
-{
-    QSet <Class> classes;
-    Class military("военный");
-    QMap <QString, QVector<int>> prop2 = {{"фио", {}}, {"звание", {}}};
-    military.setproperties(createProperties(prop2));
-    classes.insert(military);
+    Class student3("студент");
+    student3.setproperties(createProperties({{"фио", {}}, {"курс", {}}}));
+    multipleInheritance.insert(student3);
 
-    Class student("студент");
-    QMap <QString, QVector<int>> prop = {{"фио", {}}, {"курс", {}}};
-    student.setproperties(createProperties(prop));
-    classes.insert(student);
+    Class student_military1("студент_военного_училища");
+    student_military1.setproperties(createProperties({{"фио", {}}, {"курс", {}}, {"звание", {}}}));
+    multipleInheritance.insert(student_military1);
 
-    Class student_military("студент_военного_училища");
-    QMap <QString, QVector<int>> prop3 = {{"фио", {}}, {"курс", {}}, {"звание", {}}};
-    student_military.setproperties(createProperties(prop3));
-    classes.insert(student_military);
-
-    QMap <QString, QMap <QString, int>> matrix;
-    QMap <QString, QMap <QString, int>> expMatrix;
-    expMatrix = {{"военный", {{"военный", 0},{"студент", 0}, {"студент_военного_училища", 0}}},
+    newQMapName multipleInheritanceMatrix;
+    multipleInheritanceMatrix = {{"военный", {{"военный", 0},{"студент", 0}, {"студент_военного_училища", 0}}},
                  {"студент", {{"военный", 0}, {"студент", 0}, {"студент_военного_училища", 0}}},
                  {"студент_военного_училища", {{"военный", 1}, {"студент", 1}, {"студент_военного_училища", 0}}}};
 
-    buildHierarchy(classes,matrix);
+    QTest::newRow("multipleInheritance") << multipleInheritance << multipleInheritanceMatrix;
 
-    QCOMPARE(matrix, expMatrix);
-}
+    // Несколько уровней наследования
+    QSet <Class> multiLevelInheritance;
+    multiLevelInheritance.insert(Class("человек", humanProp));
 
-void testsBuildHierarchy::multiLevelInheritance()
-{
-    QSet <Class> classes;
-    Property humanprop("фио");
-    Class human("человек",humanprop);
-    classes.insert(human);
+    Class military2("военный");
+    military2.setproperties(createProperties({{"фио", {}}, {"звание", {}}}));
+    multiLevelInheritance.insert(military2);
 
-    Class student("студент");
-    QMap <QString, QVector<int>> prop = {{"фио", {}}, {"курс", {}}};
-    student.setproperties(createProperties(prop));
-    classes.insert(student);
+    Class student4("студент");
+    student4.setproperties(createProperties({{"фио", {}}, {"курс", {}}}));
+    multiLevelInheritance.insert(student4);
 
-    Class military("военный");
-    QMap <QString, QVector<int>> prop2 = {{"фио", {}}, {"звание", {}}};
-    military.setproperties(createProperties(prop2));
-    classes.insert(military);
+    Class student_military2("студент_военного_училища");
+    student_military2.setproperties(createProperties({{"фио", {}}, {"курс", {}}, {"звание", {}}}));
+    multiLevelInheritance.insert(student_military2);
 
-    Class student_military("студент_военного_училища");
-    QMap <QString, QVector<int>> prop3 = {{"фио", {}}, {"курс", {}}, {"звание", {}}};
-    student_military.setproperties(createProperties(prop3));
-    classes.insert(student_military);
-
-    QMap <QString, QMap <QString, int>> matrix;
-    QMap <QString, QMap <QString, int>> expMatrix;
-    expMatrix = {{"человек", {{"человек", 0},{"военный", 0},{"студент", 0}, {"студент_военного_училища", 0}}},
+    newQMapName multiLevelInheritanceMatrix;
+    multiLevelInheritanceMatrix = {{"человек", {{"человек", 0},{"военный", 0},{"студент", 0}, {"студент_военного_училища", 0}}},
                  {"военный", {{"человек", 1},{"военный", 0},{"студент", 0}, {"студент_военного_училища", 0}}},
                  {"студент", {{"человек", 1},{"военный", 0}, {"студент", 0}, {"студент_военного_училища", 0}}},
                  {"студент_военного_училища", {{"человек", 0},{"военный", 1}, {"студент", 1}, {"студент_военного_училища", 0}}}};
 
-    buildHierarchy(classes,matrix);
+    QTest::newRow("multiLevelInheritance") << multiLevelInheritance << multiLevelInheritanceMatrix;
 
-    QCOMPARE(matrix, expMatrix);
-}
+    // Несколько иерархий классов
+    QSet <Class> multipleHierarchies;
+    multipleHierarchies.insert(Class("человек", humanProp));
 
-void testsBuildHierarchy::multipleHierarchies()
-{
-    QSet <Class> classes;
-    Property transportprop("способ_передвижения");
-    Class transport("транспорт",transportprop);
-    classes.insert(transport);
+    Property carProp("способ_передвижения");
+    multipleHierarchies.insert(Class("транспорт", carProp));
 
-    Property humanprop("фио");
-    Class human("человек",humanprop);
-    classes.insert(human);
+    Class military3("военный");
+    military3.setproperties(createProperties({{"фио", {}}, {"звание", {}}}));
+    multipleHierarchies.insert(military3);
 
-    Class student("студент");
-    QMap <QString, QVector<int>> prop = {{"фио", {}}, {"курс", {}}};
-    student.setproperties(createProperties(prop));
-    classes.insert(student);
-
-    Class military("военный");
-    QMap <QString, QVector<int>> prop2 = {{"фио", {}}, {"звание", {}}};
-    military.setproperties(createProperties(prop2));
-    classes.insert(military);
+    Class student5("студент");
+    student5.setproperties(createProperties({{"фио", {}}, {"курс", {}}}));
+    multipleHierarchies.insert(student5);
 
     Class trolleybus("троллейбус");
-    QMap <QString, QVector<int>> prop3 = {{"способ_передвижения", {}}, {"билет", {}}};
-    trolleybus.setproperties(createProperties(prop3));
-    classes.insert(trolleybus);
+    trolleybus.setproperties(createProperties({{"способ_передвижения", {}}, {"билет", {}}}));
+    multipleHierarchies.insert(trolleybus);
 
-    QMap <QString, QMap <QString, int>> matrix;
-    QMap <QString, QMap <QString, int>> expMatrix;
-    expMatrix = {{"транспорт", {{"транспорт", 0},{"человек", 0},{"военный", 0},{"студент", 0},{"троллейбус", 0}}},
+    newQMapName multipleHierarchiesMatrix;
+    multipleHierarchiesMatrix = {{"транспорт", {{"транспорт", 0},{"человек", 0},{"военный", 0},{"студент", 0},{"троллейбус", 0}}},
                  {"человек", {{"транспорт", 0},{"человек", 0},{"военный", 0},{"студент", 0},{"троллейбус", 0}}},
                  {"военный", {{"транспорт", 0},{"человек", 1},{"военный", 0},{"студент", 0},{"троллейбус", 0}}},
                  {"студент", {{"транспорт", 0},{"человек", 1},{"военный", 0},{"студент", 0},{"троллейбус", 0}}},
                  {"троллейбус", {{"транспорт", 1},{"человек", 0},{"военный", 0},{"студент", 0},{"троллейбус", 0}}}};
 
-    buildHierarchy(classes,matrix);
+    QTest::newRow("multipleHierarchies") << multipleHierarchies << multipleHierarchiesMatrix;
+}
+
+void testsBuildHierarchy::testBuildHierarchy()
+{
+    QFETCH(QSet<Class>, classes);
+    QFETCH(newQMapName, expMatrix);
+
+    newQMapName matrix;
+    buildHierarchy(classes, matrix);
 
     QCOMPARE(matrix, expMatrix);
 }

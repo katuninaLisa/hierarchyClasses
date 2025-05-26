@@ -18,14 +18,12 @@ private:
     QSet<Property> createProperties(const QMap<QString, QVector<int>>& props);
 
 private slots:
-    void emptyClasses(); // Пустой список классов
-    void singleClass(); // Один класс без наследников
-    void twoIndependentClasses(); // Два независимых класса
-    void simpleInheritance(); // Один класс наследует другой
-    void chainInheritance(); // Цепочка наследования
-    void multipleInheritance(); // Множественное наследования
-    void multiLevelInheritance(); // Несколько уровней наследования
-    void multipleHierarchies(); // Несколько иерархий классов
+    void testBuildHierarchy_data();
+    void testBuildHierarchy();
 };
+
+typedef QMap <QString, QMap <QString, int>> newQMapName;
+typedef QSet<Class> newQSetName;
+
 
 #endif // TESTSBUILDHIERARCHY_H

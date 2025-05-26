@@ -392,7 +392,7 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
         Errors error("","",QString::number(countClasses),"","","",invalid_count_of_classes);
         list_of_errors.insert(error);
     }
-    if (xml.hasError())// Если есть ошибки парсинга
+    else if (xml.hasError())// Если есть ошибки парсинга
     {
         Errors error("","","","","","",xml_syntax_error);
         list_of_errors.insert(error);

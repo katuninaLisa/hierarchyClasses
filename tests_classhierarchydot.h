@@ -13,14 +13,10 @@ public:
     explicit tests_classHierarchyDOT(QObject *parent = nullptr);
 
 private slots:
-    void emptyMatrix(); //Пустая матрица
-    void singleClass(); //Один класс без связей
-    void twoIndependentClasses(); //Два независимых класса
-    void simpleInheritance(); //Простое наследование
-    void multipleInheritance(); //Множественное наследование
-    void deepHierarchy(); //Глубокая иерархия
-    void rhomboidInheritance(); //Ромбовидное наследование
-    void someClassHierarchies(); //Несколько иерархий классов
+    void test_class_hierarchyDOT_data();
+    void test_class_hierarchyDOT();
 };
+
+typedef QMap <QString, QMap <QString, int>> newQMapName;
 
 #endif // TESTS_CLASSHIERARCHYDOT_H
