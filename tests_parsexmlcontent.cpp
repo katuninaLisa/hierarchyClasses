@@ -202,6 +202,8 @@ void tests_parseXMLcontent::tests_parse()
 
     if (expectError)
     {
+        QVERIFY2(list_of_errors.size() == 1, "Expected 1 error");
+
         Errors error = *list_of_errors.begin();
 
         QVERIFY2(error.type == expectedError.type, "Don't match type of error");
