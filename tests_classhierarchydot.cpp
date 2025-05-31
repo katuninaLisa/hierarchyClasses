@@ -3,7 +3,7 @@
 
 tests_classHierarchyDOT::tests_classHierarchyDOT(QObject *parent) : QObject(parent) {}
 
-void tests_classHierarchyDOT::test_class_hierarchyDOT_data()
+void tests_classHierarchyDOT::tests_data()
 {
     //Создаем колонки-параметры метода
     QTest::addColumn<newQMapName>("matrix");
@@ -63,7 +63,7 @@ void tests_classHierarchyDOT::test_class_hierarchyDOT_data()
 }
 
 
-void tests_classHierarchyDOT::test_class_hierarchyDOT()
+void tests_classHierarchyDOT::tests()
 {
     QFETCH(newQMapName, matrix);
     QFETCH(QStringList, expResult);

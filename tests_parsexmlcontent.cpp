@@ -198,11 +198,68 @@ void tests_parseXMLcontent::tests_parse()
     QSet <Class> classes;
     ParseXMLcontent(xmlcontent, allowedTags, list_of_errors, classes);
 
-    QVERIFY2(classes == expectedClass, "Классы не совпадают");
+    QString message;
+    if (classes!=expectedClass)
+    {
+        for (const Class &actualClass : classes)
+        {
+            bool foundClass = false;
+            for (const Class &expClass : expectedClass)
+            {
+                if (actualClass.getName() == expClass.getName())
+                {
+                    if (actualClass.getProperties() == expClass.getProperties())
+                        foundClass = true;
+                    else
+                    {
+                        QVector<int> expValueFound;
+                        for (const Property actualProp: actualClass.getProperties())
+                        {
+                            bool foundProp = false;
+                            bool foundValue = true;
+                            for (const Property expProp: expClass.getProperties())
+                            {
+                                if (actualProp.getPropertyName() == expProp.getPropertyName())
+                                {
+                                    if (actualProp.getValues() == expProp.getValues())
+                                        foundProp = true;
+                                    else
+                                    {
+                                        expValueFound = expProp.getValues();
+                                        foundValue = false;
+                                    }
+                                }
+                            }
+                            if (!foundProp && foundValue)
+                                message += QString("Not expected property %1 in class %2").arg(actualProp.getPropertyName()).arg(actualClass.getName());
+                            if (!foundValue)
+                            {
+                                QVector<int> ActualValues = actualProp.getValues();
+                                if (ActualValues.size() != expValueFound.size())
+                                    message += QString("Size of values in property %1 doesn't match").arg(actualProp.getPropertyName());
+                                else
+                                {
+                                    for (int val : ActualValues)
+                                    {
+                                        if (!expValueFound.contains(val))
+                                            message += QString("Not expected in property %1 value - %2").arg(actualProp.getPropertyName()).arg(val);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                    message += QString("Not expected class %1").arg(actualClass.getName());
+            }
+        }
+    }
+
+    QVERIFY2(classes==expectedClass, qPrintable(message));
 
     if (expectError)
     {
-        QVERIFY2(list_of_errors.size() == 1, "Expected 1 error");
+        QVERIFY2(list_of_errors.size() == 1, qPrintable(QString("Expected 1 error, but in list %1").arg(list_of_errors.size())));
 
         Errors error = *list_of_errors.begin();
 

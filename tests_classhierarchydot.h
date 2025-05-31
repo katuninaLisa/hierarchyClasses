@@ -13,8 +13,8 @@ public:
     explicit tests_classHierarchyDOT(QObject *parent = nullptr);
 
 private slots:
-    void test_class_hierarchyDOT_data();
-    void test_class_hierarchyDOT();
+    void tests_data();
+    void tests();
 };
 
 typedef QMap <QString, QMap <QString, int>> newQMapName;
