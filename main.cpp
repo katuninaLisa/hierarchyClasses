@@ -122,7 +122,8 @@ void processValueElement(QXmlStreamReader& xml,QSet<Errors>& list_of_errors, Pro
     {
         QString value = xml.readElementText();
 
-        QStringList values = value.split(',', Qt::SkipEmptyParts);
+        QStringList values = value.split(',');
+        values.removeAll(QString(""));
 
         for (const QString val: values)
         {
