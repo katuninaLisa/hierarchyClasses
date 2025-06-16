@@ -25,14 +25,14 @@ private:
     QSet<Property> properties;
 };
 
-inline size_t qHash(const Class& key, size_t seed = 0) noexcept
-{
-    // Хешируем имя класса
-    size_t hash = qHash(key.getName(), seed);
+inline uint qHash(const Class &key, uint seed = 0) {
+    uint hash = qHash(key.getName(), seed);
 
-    // Добавляем хеш каждого свойства
-    for (const Property& prop : key.getProperties()) {
-        hash ^= qHash(prop); // Предполагается, что Property уже имеет qHash
+    QSet<Property> properties = key.getProperties();
+    QSet<Property>::const_iterator it;
+    for (it = properties.constBegin(); it != properties.constEnd(); ++it) {
+        const Property &prop = *it;
+        hash ^= qHash(prop, hash);  // Явно передаем текущий hash как seed
     }
 
     return hash;

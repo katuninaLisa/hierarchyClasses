@@ -125,12 +125,22 @@ struct Errors
                value == other.value && className == other.className && propertyName == other.propertyName &&
                otherClassName == other.otherClassName;
     }
+
+    bool operator!=(const Errors &other) const {
+        return !(*this == other);
+    }
 };
 
-inline uint qHash(const Errors &error, uint seed = 0) {
-    return qHash(error.type, seed) ^ qHash(error.nameTag, seed) ^ qHash(error.attribute, seed) ^
-           qHash(error.value, seed) ^ qHash(error.className, seed) ^ qHash(error.propertyName, seed) ^
-           qHash(error.otherClassName, seed);
+inline uint qHash(const Errors &error, uint seed = 0)
+{
+    uint hash = qHash(static_cast<int>(error.type), seed);
+    hash ^= qHash(error.nameTag, hash);
+    hash ^= qHash(error.attribute, hash);
+    hash ^= qHash(error.value, hash);
+    hash ^= qHash(error.className, hash);
+    hash ^= qHash(error.propertyName, hash);
+    hash ^= qHash(error.otherClassName, hash);
+    return hash;
 }
 
 #endif // ERRORS_H

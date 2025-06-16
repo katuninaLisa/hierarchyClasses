@@ -51,9 +51,3 @@ void Property::setvalues(int val)
     values.append(val);
 }
 
-uint qHash(const Property &key, uint seed) {
-    uint hash = seed;
-    hash = qHash(key.getPropertyName(), hash);
-    hash = qHash(key.getValues(), hash);
-    return hash;
-}
