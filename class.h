@@ -2,6 +2,7 @@
 #define CLASS_H
 #include <QSet>
 #include "property.h"
+#include <QMetaType>
 
 class Class
 {
@@ -17,7 +18,7 @@ public:
 
     bool operator==(const Class&other) const;
     bool operator!=(const Class&other) const;
-    bool operator=(Class&other);
+    bool operator=(const Class&other);
     bool isSubClass(const Class&other) const;
 
 private:
@@ -37,5 +38,7 @@ inline uint qHash(const Class &key, uint seed = 0) {
 
     return hash;
 }
+
+Q_DECLARE_METATYPE(Class)
 
 #endif // CLASS_H

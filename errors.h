@@ -1,6 +1,7 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 #include <QString>
+#include <QMetaType>
 
 enum error_type
 {
@@ -142,5 +143,7 @@ inline uint qHash(const Errors &error, uint seed = 0)
     hash ^= qHash(error.otherClassName, hash);
     return hash;
 }
+
+Q_DECLARE_METATYPE(Errors)
 
 #endif // ERRORS_H
