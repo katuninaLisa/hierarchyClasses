@@ -24,6 +24,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     class.h \
     errors.h \
+    main.h \
     property.h \
     tests_classhierarchydot.h \
     tests_parsexmlcontent.h \
