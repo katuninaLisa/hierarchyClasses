@@ -25,10 +25,14 @@ void tests_parseXMLcontent::tests_parse_data()
                                 << false;
 
     //Отсутствует корневой тег <classes>
+    QSet <Class> classe;
+    Property prop1("конечности", 4);
+    Class animal("животное", prop1);
+    classe.insert(animal);
     QTest::newRow("missingRootClassesTag") << QByteArray("<class name=\"животное\"><property name=\"конечности\"><value>4</value></property></class>")
-                                << QSet<Class> ()
-                                << Errors("classes","","","","","",missed_tag)
-                                << true;
+                                           << classe
+                                           << Errors("classes","","","","","",missed_tag)
+                                           << true;
 
     //Некорректная вложенность тегов (в property вложен class)
     QTest::newRow("propertyContainsClassTag") << QByteArray("<classes><property name=\"возраст\"> <value>10</value><class name=\"человек\"></class></property></classes>")

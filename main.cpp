@@ -228,8 +228,8 @@ void processPropertyElement(QXmlStreamReader& xml, QRegularExpression& regexName
 
             processValueElement(xml, list_of_errors, properties, className, propertyName, allowedTags);
         }
-
-        prop.insert(properties); // добавляем новое свойство
+        if (properties.getPropertyName().length() != 0)
+            prop.insert(properties); // добавляем новое свойство
     }
 
     else if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() != "property")
@@ -247,10 +247,10 @@ void processPropertyElement(QXmlStreamReader& xml, QRegularExpression& regexName
     }
 }
 
-void processClassElement(QXmlStreamReader& xml,QStringList& allowedTags,QSet<Errors>& list_of_errors, QSet<Class>& tempClasses)
+void processClassElement(QXmlStreamReader& xml,QStringList& allowedTags,QSet<Errors>& list_of_errors, QSet<Class>& tempClasses, int countClasses)
 {
     QRegularExpression regexName("^[а-яё_]+$"); // регулярное выражение - из каких букв может состоять название
-    int error_in_list = 0; // кол-во ошибок до получения тега
+    int error_in_list = list_of_errors.count(); // кол-во ошибок до получения тега
 
     QString className = xml.attributes().value("name").toString(); // получаем название класса
 
@@ -325,7 +325,7 @@ void processClassElement(QXmlStreamReader& xml,QStringList& allowedTags,QSet<Err
             Errors error("class","","",otherClass,className,"",duplication_content_of_class);
             list_of_errors.insert(error);
         }
-        else //иначе добавляем класс
+        else if(className.length() != 0) //иначе добавляем класс
         {
             curClass.setproperties(prop);
             tempClasses.insert(curClass);
@@ -381,10 +381,10 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
             }
 
             if (tagName == "class") //обрабатываем тег <class>
-            {   
+            {
                 countClasses++; // увеличиваем кол-во классов
 
-                processClassElement(xml, allowedTags, list_of_errors, tempClasses);
+                processClassElement(xml, allowedTags, list_of_errors, tempClasses, countClasses);
             }
             else
             {
@@ -392,16 +392,22 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
                 {
                     Errors error(tagName, "","","","","",incorrect_order_tags);
                     list_of_errors.insert(error);
+                    // Пропускаем невалидный тег
+                    xml.skipCurrentElement();
                 }
                 if (tagName == "value" && previousTag != "property")
                 {
                     Errors error(tagName, "","","","","",incorrect_order_tags);
                     list_of_errors.insert(error);
+                    // Пропускаем невалидный тег
+                    xml.skipCurrentElement();
                 }
                 if (tagName == "classes" && countTagClasses > 1)
                 {
                     Errors error(tagName, "","","","","",incorrect_order_tags);
                     list_of_errors.insert(error);
+                    // Пропускаем невалидный тег
+                    xml.skipCurrentElement();
                 }
             }
             previousTag = tagName;
@@ -455,18 +461,18 @@ QString classHierarchyDOT(QMap <QString, QMap <QString, int>> &matrix)
 
     //Добавление узлов (классов)
     QMap<QString, QMap<QString, int>>::const_iterator it1 = matrix.constBegin();
-    for (; it1 != matrix.constEnd(); ++it1)
+    for (it1; it1 != matrix.constEnd(); ++it1)
     {
         result += QString(it1.key()) + ";";
     }
 
     //Добавление связей между классами
     QMap<QString, QMap<QString, int>>::const_iterator it = matrix.constBegin();
-    for (; it != matrix.constEnd(); ++it)
+    for (it; it != matrix.constEnd(); ++it)
     {
         QMap<QString, int> row = it.value();
         QMap<QString, int>::const_iterator it2 = row.constBegin();
-        for (; it2 != row.constEnd(); ++it2)
+        for (it2; it2 != row.constEnd(); ++it2)
         {
             if (it2.value() == 1)
             {
