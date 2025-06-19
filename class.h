@@ -27,7 +27,7 @@ private:
 };
 
 inline uint qHash(const Class &key, uint seed = 0) {
-    uint hash = qHash(key.getName(), seed);
+    uint hash = ::qHash(key.getName().toUtf8(), seed);
 
     QSet<Property> properties = key.getProperties();
     QSet<Property>::const_iterator it;

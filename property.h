@@ -2,6 +2,7 @@
 #define PROPERTY_H
 #include <QSet>
 #include <QMap>
+#include <QHash>
 
 class Property
 {
@@ -25,7 +26,7 @@ private:
 };
 
 inline uint qHash(const Property &key, uint seed = 0) {
-    uint hash = qHash(key.getPropertyName(), seed);
+    uint hash = ::qHash(key.getPropertyName().toUtf8(), seed);
     QVector<int> values = key.getValues();
     for (int i = 0; i < values.size(); ++i) {
         hash ^= qHash(values.at(i), hash);

@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     if (!list_of_errors.isEmpty() || result == -1)
     {
         //Вернуть все обнаруженные ошибки
-        for (const auto error : list_of_errors)
+        for (const auto& error : list_of_errors)
         {
             qInfo() << error.error();
         }
@@ -53,39 +53,51 @@ int main(int argc, char *argv[])
 
 void createMatrix(QMap <QString, QMap<QString,int>> &matrix, const QSet <Class> &classes)
 {
+    //Создаем пустой список названий классов
     QStringList classNames;
+    //Для каждого класса
     for (const Class &rec :classes)
     {
+        //Заносим название класса в список
         classNames.append(rec.getName());
     }
-
+    //Для каждого класса
     for (const Class &rec : classes)
     {
+        //Создаем пустую строку - контейнер
         QMap<QString,int> row;
-        for (const QString col : classNames)
+        //Заполняем строку нулями
+        for (const QString& col : classNames)
         {
             row[col] = 0;
         }
+        //Добавляем строку в матрицу
         matrix[rec.getName()] = row;
     }
 }
 
 void eliminate_class_duplication(QMap <QString, QMap<QString,int>> &matrix)
 {
+    // Для всех классов
     for (auto it1 = matrix.begin(); it1 != matrix.end(); ++it1)
     {
         QString subClass = it1.key();
         QMap <QString,int> row = it1.value();
+        // Для каждого класса текущего класса
         for (auto it2 = row.begin(); it2 != row.end(); ++it2)
         {
+            // Если у класса есть родитель
             if (it2.value() == 1)
             {
                 QString superClass = it2.key();
+                // Для каждого класса
                 for (auto it3 = matrix.begin(); it3 != matrix.end(); ++it3) //получаем каждый класс для проверки
                 {
                     QString checkClass = it3.key();
+                    // Если у родительского класса и дочернего совпадает родитель
                     if (matrix[subClass].value(checkClass,0) == 1 && matrix[superClass].value(checkClass,0) == 1)
                     {
+                        // Удаляем у дочернего связь с этим классом
                         matrix[subClass][checkClass] = 0;
                     }
                 }
@@ -97,26 +109,33 @@ void eliminate_class_duplication(QMap <QString, QMap<QString,int>> &matrix)
 
 void buildHierarchy(const QSet<Class> &classes, QMap <QString, QMap<QString,int>> &matrix)
 {
+    // Инициализируем матрицу нулями (createMatrix)
     createMatrix(matrix, classes);
+    // Для всех классов
     for (const Class &child : classes)
     {
+        // Для каждого класса текущего класса
         for (const Class &parent : classes)
         {
+            // Если два класса  не равны
             if (child.getName() != parent.getName())
             {
+                // Если один класс является подклассом другого
                 if (child.isSubClass(parent))
                 {
+                    // Считаем, что данный столбец класса равен 1
                     matrix[child.getName()][parent.getName()] = 1;
                 }
             }
         }
     }
+    // Исключаем дублирующие классы (eliminate_class_duplication)
     eliminate_class_duplication(matrix);
 }
 
 void processValueElement(QXmlStreamReader& xml,QSet<Errors>& list_of_errors, Property& properties, QString className,QString propertyName, QStringList &allowedTags)
 {
-    QRegularExpression regexValue("^[0-9]+$"); // регулярное выражение для значения свойства
+    static const QRegularExpression regexValue("^[0-9]+$"); // регулярное выражение для значения свойства
 
     if (xml.tokenType() == QXmlStreamReader::StartElement && xml.name().toString() == "value")
     {
@@ -125,7 +144,7 @@ void processValueElement(QXmlStreamReader& xml,QSet<Errors>& list_of_errors, Pro
         QStringList values = value.split(',');
         values.removeAll(QString(""));
 
-        for (const QString val: values)
+        for (const QString& val: values)
         {
             if (!regexValue.match(val).hasMatch()) // если значение свойства имеет недопустимый тип
             {
@@ -228,7 +247,7 @@ void processPropertyElement(QXmlStreamReader& xml, QRegularExpression& regexName
     }
 }
 
-void processClassElement(QXmlStreamReader& xml,QStringList& allowedTags,QSet<Errors>& list_of_errors, QSet<Class>& tempClasses, int countClasses)
+void processClassElement(QXmlStreamReader& xml,QStringList& allowedTags,QSet<Errors>& list_of_errors, QSet<Class>& tempClasses)
 {
     QRegularExpression regexName("^[а-яё_]+$"); // регулярное выражение - из каких букв может состоять название
     int error_in_list = 0; // кол-во ошибок до получения тега
@@ -365,7 +384,7 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
             {   
                 countClasses++; // увеличиваем кол-во классов
 
-                processClassElement(xml, allowedTags, list_of_errors, tempClasses, countClasses);
+                processClassElement(xml, allowedTags, list_of_errors, tempClasses);
             }
             else
             {
@@ -436,18 +455,18 @@ QString classHierarchyDOT(QMap <QString, QMap <QString, int>> &matrix)
 
     //Добавление узлов (классов)
     QMap<QString, QMap<QString, int>>::const_iterator it1 = matrix.constBegin();
-    for (it1; it1 != matrix.constEnd(); ++it1)
+    for (; it1 != matrix.constEnd(); ++it1)
     {
         result += QString(it1.key()) + ";";
     }
 
     //Добавление связей между классами
     QMap<QString, QMap<QString, int>>::const_iterator it = matrix.constBegin();
-    for (it; it != matrix.constEnd(); ++it)
+    for (; it != matrix.constEnd(); ++it)
     {
         QMap<QString, int> row = it.value();
         QMap<QString, int>::const_iterator it2 = row.constBegin();
-        for (it2; it2 != row.constEnd(); ++it2)
+        for (; it2 != row.constEnd(); ++it2)
         {
             if (it2.value() == 1)
             {
@@ -480,6 +499,7 @@ int OutputFile(const QString &filePath, QSet <Errors> &list_of_errors, QMap<QStr
     QString result = classHierarchyDOT(matrix);
 
     QTextStream out(&file);
+    out.setEncoding(QStringConverter::System);
     out << result;
 
     //Вернуть успешность завершения функции

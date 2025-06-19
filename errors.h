@@ -135,12 +135,12 @@ struct Errors
 inline uint qHash(const Errors &error, uint seed = 0)
 {
     uint hash = qHash(static_cast<int>(error.type), seed);
-    hash ^= qHash(error.nameTag, hash);
-    hash ^= qHash(error.attribute, hash);
-    hash ^= qHash(error.value, hash);
-    hash ^= qHash(error.className, hash);
-    hash ^= qHash(error.propertyName, hash);
-    hash ^= qHash(error.otherClassName, hash);
+    hash ^= ::qHash(error.nameTag.toUtf8(), hash);
+    hash ^= ::qHash(error.attribute.toUtf8(), hash);
+    hash ^= ::qHash(error.value.toUtf8(), hash);
+    hash ^= ::qHash(error.className.toUtf8(), hash);
+    hash ^= ::qHash(error.propertyName.toUtf8(), hash);
+    hash ^= ::qHash(error.otherClassName.toUtf8(), hash);
     return hash;
 }
 

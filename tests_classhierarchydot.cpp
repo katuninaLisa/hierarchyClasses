@@ -26,7 +26,7 @@ void tests_classHierarchyDOT::tests_data()
     //Простое наследование
     newQMapName simpleInheritance = {{"человек", {{"человек", 0},{"студент", 0}}},
                                                 {"студент", {{"человек", 1}, {"студент", 0}}}};
-    QTest::newRow("twoIndependentClasses") << simpleInheritance << QStringList {"digraph ClassHierarchy {","человек;","студент;","студент->человек;", "}"};
+    QTest::newRow("simpleInheritance") << simpleInheritance << QStringList {"digraph ClassHierarchy {","человек;","студент;","студент->человек;", "}"};
 
     //Множественное наследование
     newQMapName multipleInheritance = {{"военный", {{"военный", 0},{"студент", 0}, {"студент_военного_училища", 0}}},

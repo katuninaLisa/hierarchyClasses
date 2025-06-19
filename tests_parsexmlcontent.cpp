@@ -213,11 +213,11 @@ void tests_parseXMLcontent::tests_parse()
                     else
                     {
                         QVector<int> expValueFound;
-                        for (const Property actualProp: actualClass.getProperties())
+                        for (const Property& actualProp: actualClass.getProperties())
                         {
                             bool foundProp = false;
                             bool foundValue = true;
-                            for (const Property expProp: expClass.getProperties())
+                            for (const Property& expProp: expClass.getProperties())
                             {
                                 if (actualProp.getPropertyName() == expProp.getPropertyName())
                                 {
