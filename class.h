@@ -41,23 +41,23 @@ public:
      */
     Class (const QString& name, Property& prop);
 
-    /*! \brief getName - Возвращает имя записи
+    /*! \brief Возвращает имя записи
      *  \return Имя записи
      */
     QString getName() const;
 
     /*!
-     * \brief getProperties - Получить свойства класса
+     * \brief Получить свойства класса
      * \return набор свойств класса
      */
     QSet<Property> getProperties() const;
 
-    /*! \brief setclassName - Установить имя класса
+    /*! \brief Установить имя класса
      *  \param[in] name - новое имя класса
      */
     void setclassName(QString name);
 
-    /*! \brief setproperties - Установить свойства класса
+    /*! \brief Установить свойства класса
      *  \param[in] prop - новый набор свойств класса
      */
     void setproperties(QSet <Property> prop);
