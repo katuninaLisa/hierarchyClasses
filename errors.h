@@ -1,45 +1,81 @@
+/*!
+ * \file errors.h
+ * \brief Заголовочный файл для структуры Errors
+ *
+ * Этот файл содержит объявление структуры Errors, который представляет
+ * хранилище о типах ошибок
+ * методы для работы со структурой
+ */
+
 #ifndef ERRORS_H
 #define ERRORS_H
 #include <QString>
 #include <QMetaType>
 
+/*! \brief Типы ошибок приложения
+ *
+ *  Перечисление всех возможных ошибок обработки классов:
+ *  - Ошибки файлов и путей
+ *  - Ошибки синтаксиса XML
+ *  - Ошибки валидации данных
+ *  - Ошибки уникальности элементов
+ */
 enum error_type
 {
-    invalid_input_file_path,
-    invalid_output_file_path,
-    xml_syntax_error,
-    invalid_name_tag,
-    missed_tag,
-    invalid_name_attribute,
-    missed_attribute,
-    invalid_characters_attribute,
-    invalid_type_value,
-    invalid_range_value,
-    invalid_length_name_class,
-    invalid_length_name_property,
-    invalid_count_properties_in_class,
-    invalid_count_of_classes,
-    incorrect_order_tags,
-    duplication_class,
-    duplication_property,
-    duplication_content_of_class,
-    empty_file
+    invalid_input_file_path,               //!< Некорректный путь к входному файлу
+    invalid_output_file_path,              //!< Некорректный путь к выходному файлу
+    incorrect_extension_input_file_path,   //!< Некорректное расширение входного файла
+    incorrect_extension_output_file_path,  //!< Некорректное расширение выходного файла
+    xml_syntax_error,                      //!< Синтаксическая ошибка в XML
+    invalid_name_tag,                      //!< Недопустимое имя тега
+    missed_tag,                            //!< Отсутствует тег
+    invalid_name_attribute,                //!< Недопустимое имя атрибута
+    missed_attribute,                      //!< Отсутствует атрибут
+    invalid_characters_attribute,          //!< Недопустимые символы в атрибуте
+    invalid_type_value,                    //!< Некорректный тип значения
+    invalid_range_value,                   //!< Значение вне допустимого диапазона
+    invalid_length_name_class,             //!< Некорректная длина имени класса
+    invalid_length_name_property,          //!< Некорректная длина имени свойства
+    invalid_count_properties_in_class,     //!< Некорректное количество свойств
+    invalid_count_of_classes,              //!< Некорректное количество классов
+    incorrect_order_tags,                  //!< Неправильная вложенность тегов
+    duplication_class,                     //!< Дублирование классов
+    duplication_property,                  //!< Дублирование свойств
+    duplication_content_of_class,          //!< Дублирование содержимого классов
+    empty_file                             //!< Пустой файл
 };
 
+/*! \brief Структура для хранения информации об ошибке
+ *
+ *  Содержит все детали ошибки для формирования
+ *  понятного сообщения пользователю.
+ */
 struct Errors
 {
-    QString nameTag;
-    QString attribute;
-    QString value;
-    QString className;
-    QString otherClassName;
-    QString propertyName;
-    error_type type;
+    QString nameTag;        //!< Имя тега, связанного с ошибкой
+    QString attribute;      //!< Атрибут, связанный с ошибкой
+    QString value;          //!< Значение, вызвавшее ошибку
+    QString className;      //!< Имя класса, связанного с ошибкой
+    QString otherClassName; //!< Дополнительное имя класса (для ошибок отношений)
+    QString propertyName;   //!< Имя свойства, связанного с ошибкой
+    error_type type;        //!< Тип ошибки
 
+    /*! \brief Конструктор структуры ошибки
+     *  \param[in] n - имя тега
+     *  \param[in] a - атрибут
+     *  \param[in] v - значение
+     *  \param[in] c - имя класса
+     *  \param[in] o - другое имя класса
+     *  \param[in] p - имя свойства
+     *  \param[in] t - тип ошибки
+     */
     Errors(const QString& n, const QString& a, const QString& v, const QString& c, const QString& o, const QString& p, error_type t):
         nameTag(n), attribute(a), value(v), className(c), otherClassName(o), propertyName(p), type(t)
     {}
 
+    /*! \brief Формирует сообщение об ошибке
+     *  \return Понятное текстовое описание ошибки
+     */
     QString error() const
     {
         QString message;
@@ -49,6 +85,12 @@ struct Errors
             break;
         case invalid_output_file_path:
             message = "Ошибка. Выходной файл не найден";
+            break;
+        case incorrect_extension_input_file_path:
+            message = "Ошибка. Неккоректное расширение входного файла";
+            break;
+        case incorrect_extension_output_file_path:
+            message = "Ошибка. Неккоректное расширение выходного файла";
             break;
         case xml_syntax_error:
             message = "Ошибка: Некорректный формат XML-файла. Проверьте синтаксис и структуру.";
@@ -121,17 +163,31 @@ struct Errors
         return message;
     }
 
+    /*! \brief Оператор сравнения ошибок
+     *  \param[in] other - ошибка для сравнения
+     *  \return true если ошибки идентичны
+     */
     bool operator==(const Errors &other) const {
         return type == other.type && nameTag == other.nameTag && attribute == other.attribute &&
                value == other.value && className == other.className && propertyName == other.propertyName &&
                otherClassName == other.otherClassName;
     }
 
+    /*! \brief Оператор неравенства ошибок
+     *  \param[in] other - ошибка для сравнения
+     *  \return true если ошибки отличаются
+     */
     bool operator!=(const Errors &other) const {
         return !(*this == other);
     }
 };
 
+/*!
+ * \brief Хеш-функция для структуры Errors
+ * \param[in] error - ошибка для хеширования
+ * \param[in] seed - начальное значение хеша
+ * \return Уникальный хеш на основе всех полей ошибки
+ */
 inline uint qHash(const Errors &error, uint seed = 0)
 {
     uint hash = qHash(static_cast<int>(error.type), seed);
@@ -143,7 +199,5 @@ inline uint qHash(const Errors &error, uint seed = 0)
     hash ^= ::qHash(error.otherClassName.toUtf8(), hash);
     return hash;
 }
-
-Q_DECLARE_METATYPE(Errors)
 
 #endif // ERRORS_H

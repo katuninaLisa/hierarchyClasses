@@ -350,7 +350,6 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
         list_of_errors.insert(error);
         isEmpty = true;
     }
-
     QXmlStreamReader xml(fileContent);
 
     int countClasses = 0; // количество классов
@@ -437,7 +436,14 @@ void ParseXMLcontent(const QByteArray &fileContent, QStringList& allowedTags, QS
 
 int inputXMLfile(const QString& filePath, QStringList& allowedTags, QSet<Errors >& list_of_errors, QSet <Class> &classes)
 {
-    // Открыть файл
+    QFileInfo fileInf(filePath);
+    if(fileInf.suffix() != "xml") //если расширение неправильное
+    {
+        Errors error("","","","","","",incorrect_extension_input_file_path);
+        list_of_errors.insert(error);
+        return -1;
+    }
+    //Открыть файл
     QFile file(filePath);
 
     // Если не удалось успешно открыть входной файл
@@ -445,6 +451,7 @@ int inputXMLfile(const QString& filePath, QStringList& allowedTags, QSet<Errors 
     {
         Errors error("","","","","","",invalid_input_file_path);
         list_of_errors.insert(error);
+        return -1;
     }
     //Иначе
     else
@@ -454,8 +461,6 @@ int inputXMLfile(const QString& filePath, QStringList& allowedTags, QSet<Errors 
         // Распарсить текст из XML файла(ParseXMLcontent)
         ParseXMLcontent(fileContent, allowedTags, list_of_errors, classes);
     }
-    //Закрыть файл
-    file.close();
     //Вернуть успешность завершения функции
     return 0;
 }
@@ -496,6 +501,14 @@ QString classHierarchyDOT(QMap <QString, QMap <QString, int>> &matrix)
 
 int OutputFile(const QString &filePath, QSet <Errors> &list_of_errors, QMap<QString, QMap<QString, int>> &matrix)
 {
+    QFileInfo fileInf(filePath);
+    //Если расширение выходного файла неверное (не .dot), то…
+    if(fileInf.suffix() != "dot")
+    {
+        Errors error("","","","","","",incorrect_extension_output_file_path);
+        list_of_errors.insert(error);
+        return -1;
+    }
     // Создать указанный выходной файл
     QFile file(filePath);
 
