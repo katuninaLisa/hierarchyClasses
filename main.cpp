@@ -3,10 +3,10 @@
 
 int main(int argc, char *argv[])
 {
-    char* empty_argv[] = { argv[0] }; // Только имя программы
-    QTest::qExec(new tests_parseXMLcontent, 1, empty_argv);
-    QTest::qExec(new testsBuildHierarchy, 1, empty_argv);
-    QTest::qExec(new tests_classHierarchyDOT, 1, empty_argv);
+    system("chcp 1251>nul");
+    QTest::qExec(new tests_parseXMLcontent);
+    QTest::qExec(new testsBuildHierarchy);
+    QTest::qExec(new tests_classHierarchyDOT);
 
     QCoreApplication a(argc, argv);
 
@@ -23,7 +23,13 @@ int main(int argc, char *argv[])
     QSet <Errors> list_of_errors;
 
     // Считать данные из входного файла (inputXMLfile)
-    int input = inputXMLfile(inputFilePath, allowedTags, list_of_errors, classes);
+    if (!inputFilePath.isEmpty())
+        int input = inputXMLfile(inputFilePath, allowedTags, list_of_errors, classes);
+    else
+    {
+        Errors error("","","","","","",invalid_input_file_path);
+        list_of_errors.insert(error);
+    }
 
     int result = 0; // результат выполнения программы
 
@@ -461,18 +467,18 @@ QString classHierarchyDOT(QMap <QString, QMap <QString, int>> &matrix)
 
     //Добавление узлов (классов)
     QMap<QString, QMap<QString, int>>::const_iterator it1 = matrix.constBegin();
-    for (it1; it1 != matrix.constEnd(); ++it1)
+    for (; it1 != matrix.constEnd(); ++it1)
     {
         result += QString(it1.key()) + ";";
     }
 
     //Добавление связей между классами
     QMap<QString, QMap<QString, int>>::const_iterator it = matrix.constBegin();
-    for (it; it != matrix.constEnd(); ++it)
+    for (; it != matrix.constEnd(); ++it)
     {
         QMap<QString, int> row = it.value();
         QMap<QString, int>::const_iterator it2 = row.constBegin();
-        for (it2; it2 != row.constEnd(); ++it2)
+        for (; it2 != row.constEnd(); ++it2)
         {
             if (it2.value() == 1)
             {

@@ -32,12 +32,14 @@ bool Class::operator!=(const Class& other) const
 {
     if (className != other.className || properties != other.properties)
         return true;
+    return false;
 }
 
-bool Class::operator=(Class& other)
+bool Class::operator=(const Class& other)
 {
     className = other.className;
     properties = other.properties;
+    return true;
 }
 
 void Class::setclassName(QString name)
