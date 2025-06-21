@@ -4,9 +4,17 @@
 int main(int argc, char *argv[])
 {
     system("chcp 1251>nul");
-    QTest::qExec(new tests_parseXMLcontent);
-    QTest::qExec(new testsBuildHierarchy);
-    QTest::qExec(new tests_classHierarchyDOT);
+
+    // Проверка наличия флага тестирования
+    QString first_arg = argv[1];
+    if (first_arg == "-test") // Если первый аргумент является флагом тестирования
+    {
+        QTest::qExec(new tests_parseXMLcontent);
+        QTest::qExec(new testsBuildHierarchy);
+        QTest::qExec(new tests_classHierarchyDOT);
+
+        return 0; // Завершить работу програмы
+    }
 
     QCoreApplication a(argc, argv);
 
